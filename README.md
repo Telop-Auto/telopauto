@@ -1,4 +1,4 @@
-# Telop Auto β版 3.5
+# Telop Auto β版 3.6
 ## テロップ自動生成ツール
 
 Whisper（音声認識）とGemini（校正）を使用して、動画からSRT字幕ファイルを自動生成します。
