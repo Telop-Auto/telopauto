@@ -5,7 +5,7 @@ Whisper（音声認識）とGemini（校正）を使用して、動画からSRT�
 
 文字起こしから字幕整形・校正までを自動化し、Premiereで使用できる字幕データを作成します。
 
-※マニュアルに画像を追加しました。Telop_Auto_Manual_v1_1.pdf
+※マニュアルに画像を追加しました。Telop_Auto_Manual_v1_2.pdf
 
 ---
 
