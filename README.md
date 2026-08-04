@@ -1,11 +1,14 @@
-# Telop Auto V1.0
+# Telop Auto V1.3
 ## テロップ自動生成ツール
 
 Whisper（音声認識）とGemini（校正）を使用して、動画からSRT字幕ファイルを自動生成します。
 
 文字起こしから字幕整形・校正までを自動化し、Premiereで使用できる字幕データを作成します。
 
-※マニュアルに画像を追加しました。Telop_Auto_Manual_v1_2.pdf
+※自動でセッションが再起動するようになりました。
+事前にランタイムのタイプをGPU（T4）に変更してください。
+
+※マニュアルに画像を追加しました。Telop_Auto_Manual_v1_3.pdf
 
 ---
 
@@ -13,7 +16,7 @@ Whisper（音声認識）とGemini（校正）を使用して、動画からSRT�
 
 以下のボタンからColabで開いて使用してください。
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Telop-Auto/telopauto/blob/main/Telop_Auto_v1_0.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Telop-Auto/telopauto/blob/main/Telop_Auto_v1_3.ipynb)
 
 ---
 
