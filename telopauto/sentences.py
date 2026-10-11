@@ -102,7 +102,9 @@ def infer_marks(chars: List[Char]) -> dict:
         prev = tokens[k - 2] if k >= 2 else None
 
         mark = None
-        if q.surface in NOT_RESPONSE:
+        if p.pos in ("感動詞", "フィラー") and q.pos in ("感動詞", "フィラー") and p.surface not in GREETINGS:
+            pass  # 感動詞どうしの間には入れない(「えっ|と」「じゃ|あ」の誤分割で句読点が入るのを防ぐ)
+        elif q.surface in NOT_RESPONSE:
             pass  # 「お時間いただいて|ありがとうございます」は1文のまま
         elif q.pos in ("感動詞", "フィラー") and p.pos in ("助詞", "助動詞", "動詞", "形容詞"):
             # 言い切りの後の応答・相づち(「〜続かなくて|ああなるほど」)は話者が替わることが多い
@@ -128,7 +130,7 @@ def infer_marks(chars: List[Char]) -> dict:
         elif p.pos == "感動詞" and p.surface in GREETINGS:
             mark = "。"  # 「こんにちは|今日は」
         elif p.pos in ("感動詞", "フィラー"):
-            mark = "。" if gap >= LONG_PAUSE / 2 else "、"  # 「なるほど|」「はい|」
+            mark = "、"  # 「なるほど|」「はい|」(短い相づちだけの1枚を作らないよう、文は分けない)
         elif p.pos == "接続詞" and gap >= PAUSE_FOR_AMBIGUOUS_END:
             mark = "、"
 
@@ -144,12 +146,20 @@ def infer_marks(chars: List[Char]) -> dict:
     return marks
 
 
-def build_sentences(segments: List[dict]) -> List[List[Char]]:
-    """Whisper の区間リストから文のリストを作る。"""
+def build_sentences(segments: List[dict], prefilter=None) -> List[List[Char]]:
+    """Whisper の区間リストから文のリストを作る。
+
+    prefilter: 切れ目の推定の前に各部分へ適用する処理(フィラー除去)。
+    先にフィラーを消しておかないと、「えっと」の途中に句読点が入って消せなくなる。
+    """
     stream = join_segments(segments)
     sentences: List[List[Char]] = []
     # 既存の句点で一度分けてから、それぞれの中で切れ目を推定する(長い文字列を一度に解析しない)
     for piece in split_sentences(stream):
+        if prefilter is not None:
+            piece = prefilter(piece)
+            if not piece:
+                continue
         filled = _insert(piece, infer_marks(piece))
         sentences.extend(split_sentences(filled))
     return sentences

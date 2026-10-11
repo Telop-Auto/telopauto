@@ -178,14 +178,20 @@ def layout(
     return fix_timing(blocks)
 
 
+# 次の字幕までの隙間がこれより短ければ、表示をつないで隙間を作らない(一瞬消えるちらつき防止)
+CLOSE_GAP_SEC = 1.0
+
+
 def fix_timing(
     blocks: List[dict],
     sec_per_char: float = 0.3,
     min_duration: float = 0.8,
+    close_gap: float = CLOSE_GAP_SEC,
 ) -> List[dict]:
     """最低表示時間の確保と、前後の字幕の重なり防止。
 
     ・文字数 × sec_per_char(最低 min_duration)より短い字幕は終了を延ばす
+    ・次の字幕までの隙間が close_gap 秒未満なら、次の字幕の開始までつなぐ
     ・ただし次の字幕の開始時刻は越えない
     """
     out = [dict(b) for b in blocks]
@@ -196,6 +202,8 @@ def fix_timing(
         if b["end"] - b["start"] < required:
             want = b["start"] + required
             b["end"] = min(want, nxt) if nxt is not None else want
+        if nxt is not None and 0 < nxt - b["end"] < close_gap:
+            b["end"] = nxt
         if nxt is not None and b["end"] > nxt:
             b["end"] = nxt
         if b["end"] <= b["start"]:

@@ -206,7 +206,14 @@ class Pipeline:
         def do_cleanup():
             sentences = []
             removed = 0
-            for sent in build_sentences(aligned):
+
+            def prefilter(piece):
+                nonlocal removed
+                out = remove_fillers(piece, s.filler_level, custom_fillers)
+                removed += len(piece) - len(out)
+                return out
+
+            for sent in build_sentences(aligned, prefilter=prefilter):
                 before = len(sent)
                 sent = remove_fillers(sent, s.filler_level, custom_fillers)
                 removed += before - len(sent)

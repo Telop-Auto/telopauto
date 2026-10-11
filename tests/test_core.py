@@ -277,3 +277,23 @@ def test_filler_after_leading_space():
     # 「…どうですか? あ、それは」のように文頭に空白が残っていても「あ、」を消す
     chars = make_chars(" あ、それはいいかもしれないですね。", 0, 5)
     assert text_of(remove_fillers(chars, "中")) == "それはいいかもしれないですね。"
+
+
+def test_fillers_removed_before_sentence_inference():
+    # 「えっと」の途中に句読点が入ってフィラーが消えなくなる不具合の再発防止
+    from telopauto.sentences import build_sentences
+
+    f = lambda piece: remove_fillers(piece, "中", ["えっと", "ええと"])
+    sents = [text_of(f(s)) for s in build_sentences([{"chars": make_chars("こんにちはえっと今日はお時間いただいて", 0, 5)}], prefilter=f)]
+    assert "".join(sents).replace("。", "").replace("、", "") == "こんにちは今日はお時間いただいて"
+
+
+def test_short_gap_between_sentences_is_closed():
+    blocks = [
+        {"text": "はい", "start": 10.0, "end": 10.3},
+        {"text": "こちらこそありがとうございます", "start": 11.5, "end": 13.0},
+        {"text": "長い沈黙の後", "start": 20.0, "end": 21.0},
+    ]
+    fixed = fix_timing(blocks)
+    assert fixed[0]["end"] == pytest.approx(11.5)  # 1秒未満の隙間はつなぐ(最低表示0.8秒→10.8、隙間0.7秒)
+    assert fixed[1]["end"] < 20.0  # 長い沈黙では消える
