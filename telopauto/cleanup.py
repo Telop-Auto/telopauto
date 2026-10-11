@@ -21,6 +21,29 @@ FILLERS = {
 }
 
 
+# 形態素解析で「フィラー」と判定されたときだけ消す語
+# (「あの店」の「あの」のように意味のある使い方は消さない)
+TOKEN_FILLERS = {
+    "弱": set(),
+    "中": {"あの", "あのー", "その", "そのー", "まあ", "まぁ", "あー", "あ", "え"},
+    "強": {"あの", "あのー", "その", "そのー", "まあ", "まぁ", "あー", "あ", "え", "そうですね", "なんか", "こう"},
+}
+
+
+def _remove_filler_tokens(text: str, level: str) -> str:
+    targets = TOKEN_FILLERS.get(level, TOKEN_FILLERS["中"])
+    if not targets or not text:
+        return text
+    from .linebreak import tokenize
+
+    out = []
+    for t in tokenize(text):
+        if t.pos == "フィラー" and t.surface in targets:
+            continue
+        out.append(t.surface)
+    return "".join(out)
+
+
 def remove_fillers_text(text: str, level: str = "中", custom: Iterable[str] = ()) -> str:
     words = list(FILLERS.get(level, FILLERS["中"])) + [w for w in custom if w]
     for w in sorted(set(words), key=len, reverse=True):
@@ -29,6 +52,9 @@ def remove_fillers_text(text: str, level: str = "中", custom: Iterable[str] = (
     # 文頭に空白が残っていると判定できないため、先に取り除く
     text = text.lstrip()
     text = re.sub(r"^[あえ][、。]\s*", "", text)
+    # 読点の付いていないフィラー(「あの例えば」の「あの」など)
+    text = _remove_filler_tokens(text, level)
+    text = text.lstrip()
     # フィラー削除で残った文頭の読点
     text = re.sub(r"^[、\s]+", "", text)
     text = re.sub(r"、{2,}", "、", text)

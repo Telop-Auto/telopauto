@@ -36,7 +36,13 @@ AUX_VERBS_OK = {"もらう", "いただく", "くれる", "くださる", "あ�
 SURU_VERBS = {"する", "できる", "いたす", "なさる", "させる", "される"}
 
 # 2行の長さの差1文字あたりのコスト
-BALANCE_WEIGHT = 0.25
+BALANCE_WEIGHT = 0.12
+# 行がこの文字数未満になる改行は避ける
+SHORT_LINE = 4
+SHORT_LINE_PENALTY = 2.0
+
+# 節の切れ目になる接続助詞(この後ろは強く優先して区切る)
+CLAUSE_PARTICLES = {"ので", "から", "けど", "けれど", "けれども", "けども", "が", "し", "のに", "ば", "たら", "ても", "でも"}
 
 
 @dataclass
@@ -131,7 +137,7 @@ def _pair_cost(p: Token, q: Token) -> float:
         return 12.0
     if Q in ("動詞", "形容詞") and Q1 == "非自立":
         if Q == "動詞" and p.surface in ("て", "で") and q.base in AUX_VERBS_OK:
-            return 3.0  # 協力して|もらって
+            return 2.5  # 協力して|もらって(文節の切れ目だが、続けて読むほうが自然なことが多い)
         return 12.0
     if Q == "動詞" and q.base in SURU_VERBS and P == "名詞":
         return 12.0  # 協力|して、投稿|して
@@ -151,9 +157,11 @@ def _pair_cost(p: Token, q: Token) -> float:
         return 1.0
     if P == "助詞":
         if P1 == "接続助詞":
-            return 1.0  # 〜て|、〜けど|、〜ので|
+            if p.surface in CLAUSE_PARTICLES:
+                return 0.5  # 〜ので|、〜けど|(節の切れ目)
+            return 1.0  # 〜て|
         if P1 == "終助詞":
-            return 1.0
+            return 0.5
         if P1 == "係助詞":
             return 2.0 if p.surface == "も" else 1.5  # 〜は|、〜も|
         if P1 in ("格助詞", "並立助詞"):
@@ -162,7 +170,7 @@ def _pair_cost(p: Token, q: Token) -> float:
             return 4.0  # 旅館の|名前
         return 2.5
     if P == "副詞":
-        return 2.5
+        return 3.5  # 副詞は後ろの語にかかるので、副詞の直後は避ける(やっぱり|、もし|)
     if P == "連体詞":
         return 6.0
     if Q == "名詞" and (P == "形容詞" or (P == "助動詞" and p.surface == "な")):
@@ -247,6 +255,8 @@ def wrap(
             score = c + sub_cost
         else:
             score = c + BALANCE_WEIGHT * abs(l1 - l2)
+            if min(l1, l2) < SHORT_LINE:
+                score += SHORT_LINE_PENALTY
         if score < best[0]:
             best = (score, k)
 

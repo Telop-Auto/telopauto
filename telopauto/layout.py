@@ -9,10 +9,14 @@ from .chars import Char, strip_edges, text_of
 from .linebreak import INF, boundary_costs, display_len, display_text, wrap
 
 # ブロックを1つ増やすコスト(少ないブロックで収まるならそちらを選ぶ)
-BLOCK_PENALTY = 6.0
-# これより短いブロックは避ける(文字数)
-SHORT_BLOCK = 5
+BLOCK_PENALTY = 4.0
+# 1行の文字数 × この割合より短いブロックは避ける(「一人旅とか」だけの1枚など)
+SHORT_BLOCK_RATIO = 0.4
 SHORT_BLOCK_WEIGHT = 1.0
+# ブロックの長さをそろえる重み(目標は上限の75%)。
+# 同程度の区切り方が複数あるとき、極端に長い/短いブロックができない方を選ぶ
+BLOCK_BALANCE_WEIGHT = 0.02
+BLOCK_TARGET_RATIO = 0.75
 # 区切り位置の無音1秒あたりのボーナス(無音のところで分けやすくする)
 GAP_BONUS_PER_SEC = 4.0
 GAP_BONUS_MAX_SEC = 1.0
@@ -72,6 +76,7 @@ def _partition(chars, text, costs, settings: LayoutSettings):
     max_chars = settings.max_chars_per_line
     max_lines = settings.lines
 
+    short_block = max(4, round(max_chars * SHORT_BLOCK_RATIO))
     cuts = [i for i in range(1, n) if costs[i] != INF]
     points = [0] + cuts + [n]
     index_of = {p: k for k, p in enumerate(points)}
@@ -100,8 +105,11 @@ def _partition(chars, text, costs, settings: LayoutSettings):
             if wcost == INF:
                 continue
             cost = best[ik] + wcost + BLOCK_PENALTY
-            if length < SHORT_BLOCK:
-                cost += (SHORT_BLOCK - length) * SHORT_BLOCK_WEIGHT
+            # 短いブロックは避ける。ただし文末や句読点・応答の後で自然に切れる場合は除く(「ああなるほど」)
+            natural_end = j == n or costs[j] == 0.0
+            if length < short_block and not natural_end:
+                cost += (short_block - length) * SHORT_BLOCK_WEIGHT
+            cost += BLOCK_BALANCE_WEIGHT * (limit * BLOCK_TARGET_RATIO - length) ** 2
             if i > 0:
                 cut = costs[i] * 1.5
                 cut -= GAP_BONUS_PER_SEC * min(_gap(chars, i), GAP_BONUS_MAX_SEC)
@@ -157,16 +165,15 @@ def layout(
     """
     blocks = []
     for sent in sentences:
+        parts = []
         for b in split_sentence(sent, settings, protected_words):
             visible = [c for c in b["chars"] if c["c"] not in "、。" and not c["c"].isspace()]
             ref = visible or b["chars"]
-            blocks.append(
-                {
-                    "text": "\n".join(b["lines"]),
-                    "start": ref[0]["s"],
-                    "end": ref[-1]["e"],
-                }
-            )
+            parts.append({"text": "\n".join(b["lines"]), "start": ref[0]["s"], "end": ref[-1]["e"]})
+        # 同じ文の中で分けたテロップは、言い終わりで消さずに次のテロップまでつなぐ(v1.5 と同じ)
+        for a, b in zip(parts, parts[1:]):
+            a["end"] = max(a["end"], b["start"])
+        blocks.extend(parts)
     blocks.sort(key=lambda b: b["start"])
     return fix_timing(blocks)
 

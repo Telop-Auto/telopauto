@@ -105,7 +105,52 @@ def test_protected_word_not_split():
 
 def test_suru_verb_not_split():
     (lines,) = _lines("スタッフさんとかお客様に協力してもらって写真を撮ってもらったり")
-    assert lines == ["スタッフさんとかお客様に協力して", "もらって写真を撮ってもらったり"]
+    assert "協力|して" not in "|".join(lines)
+    assert lines == ["スタッフさんとかお客様に協力してもらって", "写真を撮ってもらったり"]
+
+
+def test_clause_boundary_preferred_over_balance():
+    # 「〜ので|そこは」:節の切れ目を優先し、「そこは」を行末に取り残さない
+    (lines,) = _lines("見てから予約する人が多いのでそこはやっぱり力を入れたいところですよね")
+    assert lines == ["見てから予約する人が多いので", "そこはやっぱり力を入れたいところですよね"]
+
+
+def test_blocks_in_sentence_are_connected():
+    from telopauto.layout import layout
+
+    sent = make_chars("はい例えば旅館の名前と温泉女子旅とか一人旅とかターゲットに合わせたキーワードを組み合わせると拡散しやすいです", 0, 16)
+    # 「一人旅とか」の後に0.8秒の間を入れる
+    for c in sent[24:]:
+        c["s"] += 0.8
+        c["e"] += 0.8
+    blocks = layout([sent], LayoutSettings(20, 1, 20))
+    for a, b in zip(blocks, blocks[1:]):
+        assert a["end"] == pytest.approx(b["start"])  # 同じ文の中は隙間なくつながる
+    assert all(len(b["text"]) >= 8 for b in blocks)  # 極端に短いブロックを作らない
+
+
+def test_sentence_inference():
+    from telopauto.sentences import build_sentences
+
+    segs = []
+    t = 0.0
+    for text in ["こんにちは今日はお時間いただいてありがとうございます", "そうなんですよね私もやらなきゃと思ってはいるんですけど",
+                 "考えたことなかったですなんか簡単で覚えやすいのがいいですよね", "投稿もなかなか続かなくて", "ああなるほど"]:
+        segs.append({"chars": make_chars(text, t, t + len(text) * 0.15)})
+        t += len(text) * 0.15 + 0.1
+    sents = [text_of(s) for s in build_sentences(segs)]
+    assert sents[0] == "こんにちは。"
+    assert sents[1] == "今日はお時間いただいてありがとうございます。"
+    assert sents[2] == "そうなんですよね。"
+    assert any("いるんですけど、考えたことなかったです。" in x for x in sents)  # 区間の切れ目の「けど」には読点
+    # Whisperの区間の切れ目でも、言い切りの後の相づちは別の文
+    assert sents[-2].startswith("投稿もなかなか続かなくて")
+    assert sents[-1].startswith("ああ")
+
+
+def test_filler_without_comma():
+    assert text_of(remove_fillers(make_chars("あの例えばですけど地域の", 0, 3), "中")) == "例えばですけど地域の"
+    assert text_of(remove_fillers(make_chars("あの店に行った", 0, 3), "中")) == "あの店に行った"
 
 
 def test_comma_is_preferred_and_hidden():

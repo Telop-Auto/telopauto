@@ -26,9 +26,10 @@ from dataclasses import dataclass
 from typing import Callable, List, Optional
 
 from . import __version__
-from .chars import retime, split_sentences, strip_edges, text_of
+from .chars import retime, strip_edges, text_of
 from .cleanup import apply_dictionary, parse_dictionary, parse_word_list, remove_fillers
 from .layout import LayoutSettings, layout, to_srt
+from .sentences import build_sentences
 from .settings import Settings
 
 Log = Callable[[str], None]
@@ -200,20 +201,19 @@ class Pipeline:
         # 3. 文分割・フィラー・辞書
         dictionary = parse_dictionary(s.user_dictionary)
         custom_fillers = parse_word_list(s.custom_fillers)
-        fp3 = _fp("cleanup", fp2, s.filler_level, custom_fillers, dictionary)
+        fp3 = _fp("cleanup", fp2, s.filler_level, custom_fillers, dictionary, __version__)
 
         def do_cleanup():
             sentences = []
             removed = 0
-            for seg in aligned:
-                for sent in split_sentences(seg["chars"]):
-                    before = len(sent)
-                    sent = remove_fillers(sent, s.filler_level, custom_fillers)
-                    removed += before - len(sent)
-                    sent = apply_dictionary(sent, dictionary)
-                    sent = strip_edges(sent)
-                    if text_of(sent).strip():
-                        sentences.append(sent)
+            for sent in build_sentences(aligned):
+                before = len(sent)
+                sent = remove_fillers(sent, s.filler_level, custom_fillers)
+                removed += before - len(sent)
+                sent = apply_dictionary(sent, dictionary)
+                sent = strip_edges(sent)
+                if text_of(sent).strip(" 、。"):
+                    sentences.append(sent)
             log(f"  {len(sentences)}文(フィラー等で {removed}文字 削除)")
             return sentences, True
 

@@ -83,10 +83,22 @@ def _show_result(result) -> None:
         pass
 
 
-def run(settings: Settings, audio_path: str, start_over: bool = False) -> None:
+def _detail_summary(s: Settings, is_default: bool) -> str:
+    from .cleanup import parse_dictionary, parse_word_list
+
+    note = "(既定値。変更した場合は「詳細設定」のセルの ▶ を押してください)" if is_default else ""
+    return (
+        f"詳細設定:Whisper {s.whisper_model} / ユーザー辞書 {len(parse_dictionary(s.user_dictionary))}件"
+        f" / Gemini補助辞書 {len(parse_word_list(s.gemini_assist_words))}件 / 追加フィラー "
+        f"{len(parse_word_list(s.custom_fillers))}件 / Geminiモデル {s.gemini_model}{note}"
+    )
+
+
+def run(settings: Settings, audio_path: str, start_over: bool = False, detail_is_default: bool = False) -> None:
     from .pipeline import Pipeline
 
     s = settings.normalized()
+    print("ℹ️ " + _detail_summary(s, detail_is_default))
 
     ac = checks.check_audio(audio_path)
     _say(ac.ok, ac.message)
