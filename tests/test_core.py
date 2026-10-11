@@ -214,3 +214,21 @@ def test_pipeline_reuses_stages(tmp_path):
     r4 = pipe.run(s, force=True, **kw)
     assert r4.reran[0] == "transcribe"
     assert calls == ["t", "a", "t", "a"]
+
+
+def test_ctc_align_long_segment():
+    # 64文字以上の区間で桁あふれして均等割りに落ちていた不具合の再発防止
+    rng = np.random.default_rng(0)
+    T, N, V = 1500, 180, 300
+    lp = rng.standard_normal((T, V))
+    lp = lp - np.log(np.exp(lp).sum(1, keepdims=True))
+    tokens = list(rng.integers(1, V, N))
+    spans = ctc_align(lp, tokens, 0)
+    assert spans is not None and len(spans) == N
+    assert all(a[1] <= b[0] for a, b in zip(spans, spans[1:]))
+
+
+def test_filler_after_leading_space():
+    # 「…どうですか? あ、それは」のように文頭に空白が残っていても「あ、」を消す
+    chars = make_chars(" あ、それはいいかもしれないですね。", 0, 5)
+    assert text_of(remove_fillers(chars, "中")) == "それはいいかもしれないですね。"

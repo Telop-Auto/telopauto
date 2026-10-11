@@ -74,7 +74,9 @@ def ctc_align(log_probs: np.ndarray, tokens: List[int], blank: int) -> Optional[
     state_at = np.empty(T, dtype=np.int64)
     for t in range(T - 1, -1, -1):
         state_at[t] = s
-        s -= back[t, s]
+        # back は int8 なので必ず Python の int にしてから引く
+        # (そのまま引くと int8 になり、128状態以上=64文字以上の区間で桁あふれする)
+        s -= int(back[t, s])
 
     spans = []
     for k in range(N):
@@ -183,11 +185,14 @@ def align(audio: np.ndarray, segments: List[dict], device: str, log: Log = print
         for k, seg in enumerate(segments, start=1):
             try:
                 chars, ok = aligner.align_segment(audio, seg)
-            except Exception:
+                reason = "" if ok else "文字を音声に合わせられませんでした"
+            except Exception as e:
                 chars, ok = make_chars(seg["text"], seg["start"], seg["end"]), False
+                reason = f"{type(e).__name__}: {e}"
             if not ok:
                 failed += 1
-            out.append({**seg, "chars": chars, "aligned": ok})
+                log(f"  ⚠️ {seg['start']:.1f}秒〜:{reason}({seg['text'][:15]}…)")
+            out.append({**seg, "chars": chars, "aligned": ok, "reason": reason})
             if k % 50 == 0 or k == len(segments):
                 log(f"  文字タイムコード付け中... {k}/{len(segments)}")
     finally:

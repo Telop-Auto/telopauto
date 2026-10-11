@@ -33,6 +33,9 @@ from .settings import Settings
 
 Log = Callable[[str], None]
 
+# 文字タイムコード処理を直したら上げる(保存済みの結果を使わずにやり直させる)
+ALIGN_VERSION = 2
+
 STAGES = ["transcribe", "align", "cleanup", "proofread", "layout"]
 STAGE_LABELS = {
     "transcribe": "文字起こし",
@@ -183,7 +186,7 @@ class Pipeline:
         segments = step("transcribe", fp1, do_transcribe)
 
         # 2. 文字タイムコード
-        fp2 = _fp("align", fp1)
+        fp2 = _fp("align", fp1, ALIGN_VERSION)
 
         def do_align():
             if aligner is not None:

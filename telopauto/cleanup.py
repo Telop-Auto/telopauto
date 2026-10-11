@@ -26,6 +26,8 @@ def remove_fillers_text(text: str, level: str = "中", custom: Iterable[str] = (
     for w in sorted(set(words), key=len, reverse=True):
         text = text.replace(w, "")
     # 「あ、」「え、」は文頭のみ削除(「ああ、」「ええ、」は残す)
+    # 文頭に空白が残っていると判定できないため、先に取り除く
+    text = text.lstrip()
     text = re.sub(r"^[あえ][、。]\s*", "", text)
     # フィラー削除で残った文頭の読点
     text = re.sub(r"^[、\s]+", "", text)
