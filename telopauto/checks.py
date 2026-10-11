@@ -20,13 +20,13 @@ class Check:
 
 GPU_HELP = (
     "上部メニュー「ランタイム」→「ランタイムのタイプを変更」で「T4 GPU」を選び、"
-    "保存してから ⓪ のセルをもう一度実行してください。"
+    "保存してから、もう一度 ▶ を押してください。"
 )
 
 KEY_HELP = (
     "左側の🔑(シークレット)を開き、名前を GEMINI_API_KEY、値に APIキーを入れて登録し、"
     "「ノートブックからのアクセス」をオンにしてください。"
-    "Gemini校正を使わない場合は、設定で「Gemini校正」をオフにすればこのままで大丈夫です。"
+    "Gemini校正を使わない場合は、フォームの「use_gemini」のチェックを外せばこのままで大丈夫です。"
 )
 
 
@@ -95,7 +95,7 @@ def check_audio(path: Optional[str]) -> Check:
     from .audio import AUDIO_EXTENSIONS, probe
 
     if not path:
-        return Check(False, "音声ファイルが選ばれていません。② のセルでアップロードしてください。", fatal=True)
+        return Check(False, "音声ファイルが選ばれていません。", fatal=True)
     if not os.path.exists(path):
         return Check(False, f"ファイルが見つかりません:{path}", fatal=True)
     if not path.lower().endswith(AUDIO_EXTENSIONS):
