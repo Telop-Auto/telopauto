@@ -1,55 +1,84 @@
-# Telop Auto V1.5
+# Telop Auto V2.0
 ## テロップ自動生成ツール
 
-Whisper（音声認識）とGemini（校正）を使用して、動画からSRT字幕ファイルを自動生成します。
+Whisper(音声認識)と Gemini(校正)を使用して、音声・動画ファイルから SRT 字幕ファイルを自動生成します。
 
-文字起こしから字幕整形・校正までを自動化し、Premiereで使用できる字幕データを作成します。
-
-※Colab環境の変更に対応しました。
-
-※自動でセッションが再起動するようになりました。
-事前にランタイムのタイプをGPU（T4）に変更してください。
-
-※マニュアルに画像を追加しました。Telop_Auto_Manual_v1_3.pdf
+文字起こしから字幕の分割・改行・校正までを自動化し、Premiere で使用できる字幕データを作成します。
 
 ---
 
-## 🚀 Google Colabで起動
+## 🚀 Google Colab で起動
 
-以下のボタンからColabで開いて使用してください。
+以下のボタンから Colab で開いて使用してください。
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Telop-Auto/telopauto/blob/main/Telop_Auto_v1_5.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Telop-Auto/telopauto/blob/main/Telop_Auto_v2_0.ipynb)
+
+---
+
+## ✨ V2.0 の特長
+
+### 設定して ▶ を押すだけ
+- セッションの再起動や、複数のセルを順番に実行する手順は不要になりました
+- フォームで設定して ▶ を1回押せば、ファイルの選択から SRT のダウンロードまで自動で進みます
+
+### 作り直しは数秒、無料枠もほぼ使わない
+- 行数や文字数を変えて作り直すときは、文字起こしも Gemini 校正もやり直しません
+- 変更が必要な工程だけを実行するので、数秒で完了します
+- Colab の GPU や Gemini API の無料枠を、作り直しのたびに消費しません
+
+### 止まっても続きから再開
+- GPU の設定忘れや Gemini APIキーの未登録は、ファイルをアップロードする前にお知らせします
+- エラーで止まっても、完了した工程は飛ばして続きから再開できます
+- Gemini API の利用上限に達しても止まらずに SRT を作成し、あとから未校正の文だけを校正できます
+
+### 字幕の分割・改行がより自然に
+- 単語の途中や、「協力|して」のような言葉の途中で改行しません
+- 「。」が付いていない文の切れ目や、話し手の切り替わりを自動で見つけます
+- 1行字幕は、1行用に最適な位置で区切ります
+- ユーザー辞書・Gemini補助辞書に登録した言葉は、途中で改行されません
+- 同じ文の中のテロップは、途切れずに次のテロップへつながります
+
+### 校正の安心感
+- Gemini は誤字・誤変換の修正だけを行い、言い回しは変えません
+- 元の文から変わりすぎた校正は採用せず、元の文を残します
 
 ---
 
 ## 必要なもの
 
-- Googleアカウント
-- Gemini APIキー
-- Google Colab環境
+- Google アカウント
+- Gemini APIキー(Gemini 校正を使う場合)
+- Google Colab 環境
 
-※Gemini APIキーはGoogle AI Studioから無料で取得できます。
+※ Gemini APIキーは Google AI Studio から無料で取得できます。
 
 ---
 
 ## 使い方
 
-1. Colabを開く
-2. Gemini APIキーを設定
-3. GPU（T4）を有効化
-4. セットアップを実行
-5. 音声ファイルをアップロード
-6. 自動生成されたSRTファイルを使用
+1. 上の「Open in Colab」ボタンから開く
+2. 上部メニュー「ランタイム」→「ランタイムのタイプを変更」で **T4 GPU** を選ぶ
+3. Gemini API を使用する場合は、APIキーを設定する(初回のみ。設定の仕方はノートブック内で案内しています)
+4. フォームで行数・文字数などを設定する
+5. フォームの左上にある **▶**(丸い再生ボタン)を押す
+6. 数秒後にフォームの一番下に出る「ファイル選択」から、音声ファイルを選ぶ
+7. あとは最後まで自動で進み、SRT がダウンロードされます
+
+設定を変えて作り直す場合は、「音声ファイル」で「前回のファイルで作り直す」を選んで ▶ を押してください。
+
+### マニュアル
+
+V2.0 対応のマニュアルは準備中です。
 
 ---
 
 ## テロップテンプレートについて
 
-Telop Autoで作成した字幕は、**Telop Design Labのテロップテンプレート**を使用して、Premiere上でデザインを適用できます。
+Telop Auto で作成した字幕は、**Telop Design Lab のテロップテンプレート**を使用して、Premiere 上でデザインを適用できます。
 
 動画のジャンルや雰囲気に合わせたデザインをお選びください。
 
-BOOTH：
+BOOTH:
 https://terop.booth.pm/
 
 ---
@@ -58,8 +87,14 @@ https://terop.booth.pm/
 
 - 本ツールは継続的に改善・アップデートを行っているβ版です。
 - 文字起こしや校正の結果には誤りが含まれる場合があります。最終的な内容は必ず確認してください。
-- Gemini APIには利用制限があります。長時間素材や大量処理では、一時的に処理できない場合があります。
-- Google Colabの無料GPUには利用上限があります。
+- Gemini API には利用制限があります。上限に達した場合は、残りの文を校正せずに SRT を作成します。
+- Google Colab の無料 GPU には利用上限があります。
+
+---
+
+## 過去のバージョン
+
+過去のバージョンのノートブックとマニュアルは [versions](versions/) フォルダにあります。
 
 ---
 
@@ -77,5 +112,5 @@ https://terop.booth.pm/
 
 Telop Design Lab
 
-X：
+X:
 https://x.com/telopdesignlab
