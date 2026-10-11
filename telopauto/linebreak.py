@@ -148,7 +148,7 @@ def _pair_cost(p: Token, q: Token) -> float:
     if P == "動詞" and p.infl.startswith("連用") and Q in ("名詞", "動詞"):
         return 8.0  # かけ|流し、組み|合わせる
     if P == "名詞" and Q == "動詞":
-        return 5.0  # 助詞の省略(説得力|あります)や誤解析
+        return 8.0  # 助詞の省略(説得力|あります)は続けて読む1文節
 
     # ---- 文節の切れ目 ----
     if P in ("フィラー", "感動詞"):

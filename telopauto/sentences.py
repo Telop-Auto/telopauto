@@ -29,6 +29,9 @@ PAUSE_FOR_PLAIN_VERB_END = 0.6
 # 感動詞だが応答・相づちではなく、前の言葉に続けて言う語
 NOT_RESPONSE = {"ありがとう", "おめでとう", "すみません", "ごめん", "ごめんなさい"}
 
+# 形態素解析で2つに分かれてしまう1語(この間には句読点を補わない)
+JOINED = {"えっと", "ええと", "えーと", "えーっと", "じゃあ", "あのー", "そのー", "まあ", "うーん"}
+
 GREETINGS = {"こんにちは", "こんばんは", "おはよう", "さようなら", "よろしく"}
 
 PUNCT = set("、。，,．.？！?!「」『』（）() ")
@@ -102,7 +105,11 @@ def infer_marks(chars: List[Char]) -> dict:
         prev = tokens[k - 2] if k >= 2 else None
 
         mark = None
-        if p.pos in ("感動詞", "フィラー") and q.pos in ("感動詞", "フィラー") and p.surface not in GREETINGS:
+        if p.surface + q.surface in JOINED:
+            pass  # 「えっ|と」「じゃ|あ」は1語(誤分割)
+        elif p.surface in GREETINGS:
+            mark = "。"  # 「こんにちは|えっと」「こんにちは|今日は」
+        elif p.pos in ("感動詞", "フィラー") and q.pos in ("感動詞", "フィラー"):
             pass  # 感動詞どうしの間には入れない(「えっ|と」「じゃ|あ」の誤分割で句読点が入るのを防ぐ)
         elif q.surface in NOT_RESPONSE:
             pass  # 「お時間いただいて|ありがとうございます」は1文のまま
@@ -149,17 +156,17 @@ def infer_marks(chars: List[Char]) -> dict:
 def build_sentences(segments: List[dict], prefilter=None) -> List[List[Char]]:
     """Whisper の区間リストから文のリストを作る。
 
-    prefilter: 切れ目の推定の前に各部分へ適用する処理(フィラー除去)。
-    先にフィラーを消しておかないと、「えっと」の途中に句読点が入って消せなくなる。
+    フィラー(「あ」「えっと」など)は話者が替わる目印になるので、
+    切れ目の推定はフィラーを残したまま行い、その後で除去する。
     """
     stream = join_segments(segments)
     sentences: List[List[Char]] = []
     # 既存の句点で一度分けてから、それぞれの中で切れ目を推定する(長い文字列を一度に解析しない)
     for piece in split_sentences(stream):
-        if prefilter is not None:
-            piece = prefilter(piece)
-            if not piece:
-                continue
         filled = _insert(piece, infer_marks(piece))
-        sentences.extend(split_sentences(filled))
+        for sent in split_sentences(filled):
+            if prefilter is not None:
+                sent = prefilter(sent)
+            if text_of(sent).strip(" 、。"):
+                sentences.append(sent)
     return sentences

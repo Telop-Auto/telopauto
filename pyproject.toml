@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "telopauto"
-version = "1.7.1"
+version = "1.7.2"
 description = "音声から日本語字幕(SRT)を自動生成する Telop Auto の処理本体"
 requires-python = ">=3.9"
 # PyTorch / NumPy / transformers は Colab に入っているものをそのまま使う

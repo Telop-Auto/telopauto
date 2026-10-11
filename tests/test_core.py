@@ -297,3 +297,16 @@ def test_short_gap_between_sentences_is_closed():
     fixed = fix_timing(blocks)
     assert fixed[0]["end"] == pytest.approx(11.5)  # 1秒未満の隙間はつなぐ(最低表示0.8秒→10.8、隙間0.7秒)
     assert fixed[1]["end"] < 20.0  # 長い沈黙では消える
+
+
+def test_filler_marks_speaker_change():
+    # 「…ありますし あ でも…」の「あ」は話者交代の目印。消す前に文の切れ目として使う
+    from telopauto.layout import layout
+    from telopauto.sentences import build_sentences
+
+    f = lambda piece: remove_fillers(piece, "中")
+    text = "やっぱりお客様のリアルな声が一番説得力ありますしあでもそういうのお願いするのって失礼じゃないですかね"
+    sents = build_sentences([{"chars": make_chars(text, 0, 10)}], prefilter=f)
+    assert [text_of(s) for s in sents][0].endswith("ありますし。")
+    blocks = [b["text"] for b in layout(sents, LayoutSettings(20, 1, 20))]
+    assert blocks == ["やっぱりお客様のリアルな声が", "一番説得力ありますし", "でもそういうのお願いするのって", "失礼じゃないですかね"]
