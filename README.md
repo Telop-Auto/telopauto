@@ -13,6 +13,8 @@ Whisper(音声認識)と Gemini(校正)を使用して、音声・動画ファ�
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Telop-Auto/telopauto/blob/main/Telop_Auto_v2_0.ipynb)
 
+📖 **はじめての方は、まずマニュアルをご覧ください:[Telop Auto ご利用ガイド(PDF)](https://github.com/Telop-Auto/telopauto/blob/main/Telop_Auto_Manual_v2_0.pdf)**
+
 ---
 
 ## ✨ V2.0 の特長
@@ -68,7 +70,7 @@ Whisper(音声認識)と Gemini(校正)を使用して、音声・動画ファ�
 
 ### マニュアル
 
-V2.0 対応のマニュアルは準備中です。
+画像付きの詳しい手順は、[Telop Auto ご利用ガイド(PDF)](https://github.com/Telop-Auto/telopauto/blob/main/Telop_Auto_Manual_v2_0.pdf)をご覧ください。
 
 ---
 
